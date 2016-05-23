@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+	<script>
+			var deviceWidth = document.documentElement.clientWidth;
+			if (deviceWidth > 750) deviceWidth = 750;
+			document.documentElement.style.fontSize = deviceWidth / 7.5 + "px";
+			document.documentElement.style.width = "100%";
+	</script>
+	<title>tab</title>
+	<style>
+		body{
+			width:7.5rem;
+			overflow-x:hidden;
+		}
+	* {
+		margin:0;
+		padding:0;
+		border:0;
+	}
+	.tab-box{
+		width:100%;
+		overflow-x:scroll;
+		position:relative;
+		height:30px;
+	}
+
+	.tab-box::-webkit-scrollbar {
+		visibility: hidden;
+		height:0;
+	}
+
+	.tab-bar {
+		height: 30px;
+		display: -webkit-box;
+		-webkit-box-align:center;
+		position: relative;
+		top:0;
+		left:0;
+	}
+/* 	.tab-bar span {
+	width: 20%;
+	height: 2px;
+	display: block;
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	background: #000;
+} */
+	.tab-bar a {
+		display: block;
+		text-align: center;
+		text-decoration: none;
+		padding:0 20px;
+		height:30px;
+		line-height: 30px;
+		font-size:14px;
+		position:relative;
+	}
+	.tab-bar a.active {
+		width: 20%;
+		height: 2px;
+		display: block;
+		position: absolute;
+		left: 0;
+		bottom: 0;
+		background: #000;
+	}
+	.viewbox{
+		width:7.5rem;
+		overflow:hidden;
+		-webkit-box-flex:1;
+	}
+	.viewport {
+
+	}
+	.pageview {
+		width: 7.5rem;
+		overflow-y:scroll;
+		position:relative;
+	}
+	.touchContainer{
+		display:-webkit-box;
+		-webkit-box-orient:vertical;
+		width:100%;
+	}
+	.pagecontainer{
+		height:5000px;
+	}
+	.loadingview{
+		position:absolute;
+		width:100%;
+		height:40px;
+		left:0;
+		top:0;
+		background:#ECECEC;
+		font-size:12px;
+		text-align:center;
+		display:-webkit-box;
+		-webkit-box-pack:center;
+		-webkit-box-align:center;
+		color:#666;
+	}
+	</style>
+</head>
+<body >
+<div class="touchContainer">
+	<div class="tab-box">
+		<div class="tab-bar">
+			<a href="javascript:;" class="navpage"><div>页面aaaaaaaa-1</div></a>
+			<a href="javascript:;" class="navpage">页面-2</a>
+			<a href="javascript:;" class="navpage">页面adwad-3</a>
+			<a href="javascript:;" class="navpage">页面ad-4</a>
+			<a href="javascript:;" class="navpage">页面-5</a>
+			<!--<span class="slidebar"></span>-->
+		</div>
+	</div>
+	<div class="viewbox">
+		<div id="viewport" class="viewport">
+			<div class="pageview" style="background: #3b76c0" >
+				<div style="height:5000px;" class="pagecontainer" num="0">页面-1</div>
+			</div>
+			<div class="pageview" style="background: #58c03b;">
+				<div class="pagecontainer" num="1">页面-2</div>
+			</div>
+			<div class="pageview" style="background: #c03b25;">
+				<div class="pagecontainer" num="2">页面-3</div>
+			</div>
+			<div class="pageview" style="background: #e0a718;">
+				<div class="pagecontainer" num="3">页面-4</div>
+			</div>
+			<div class="pageview" style="background: #c03eac;">
+				<div class="pagecontainer" num="4">页面-5</div>
+			</div>
+		</div>
+	</div>
+</div>
+<script src="touchPage.js"></script>
+
+<script>
+
+
+//接口
+
+
+//options.slidePage,要滑动的页面,,那个大框框，不是每页的   必须
+//options.slidePage;
+
+
+//options.slideNavBar要滑动的导航   必须
+//options.slideNavBar;
+
+
+//options.slideNavBarParent导航所在的父级   必须
+//options.slideNavBarParent;
+
+
+
+//options.pageview每一页的类名  必须
+//options.pageview;
+
+
+//options.viewbox  必须   滑动页面的容器，，设置活动区域大小的
+//options.viewbox;
+
+//options.slidebar导航上，指示当前页的效果块,,可以设置，也可以不设置，设置了就用设置的，没设置，js自己生成
+//options.slidebar ;
+
+//options.tabbox导航的可视区域  必须
+//options.tabbox ;
+
+$(function() {
+	var mytouch = new touchEvent({
+		slidePage: ".viewport",  //要滑动的页面,,那个大框框，不是每页的,所有页面宽度总和的的那个   必须
+		slideNavBar: ".navpage",  //要滑动的导航   必须
+		pageview: ".pageview",   //所哟滑动的页面的统一的类名  必须
+		pagecontainer: ".pagecontainer",   //放真正详情内容的位置   必须
+		slideNavBarParent: ".tab-bar",  //导航所在的父级，其宽度为导航的整体宽度，不是可视区   必须
+		viewbox: ".viewbox",  //必须   滑动页面的容器，，设置活动区域大小的，活动的页面都将在这个范围里面活动
+		tabbox: ".tab-box",   //导航的可视区域，导航的活动范围  必须
+		touchContainer: ".touchContainer",   //将导航和页面整个放到这个容器里面，需要作为其两直接父级
+		goNextPageDistance: null,    //正常状态下设置手指划过多少距离，页面才能跳到下页，，
+		goNextPageDistanceInSlide: null,   //特殊状态下设置手指划过多少距离，页面才能跳到下页，，
+		touchLonForSlideStart: 40,   //设置手指划过指定距离，页面才能跟着已启动
+		refresh: "yes",    //是否开启单页下拉刷新。
+		XtoY: 5,    //设置手指在一开始滑动的瞬间划过的水平距离比上垂直距离  小于这个要求页面才能动
+		YtoX: 0.1,   //下拉刷新可开始滑动的滑动比例  越小越灵活
+		currentPageSign: null,  //到第几个导航了的指示器，，那条红线，没传，js会自己创建。
+		startLoadingDate: "end",   //滑动时是否开始加载数据，start表示有滑动了，就执行划出来那一页的方法end是在touchend之后，页面进行到了某一页，在执行那一夜要执行的方法,传null的话就不会执行回调了。如果不传，默认为滑动开始就执行
+		callback: {page0:h, page1: r},  //每页要执行的回调函数，，格式必须为page1：function（）{}，page2：function（）{}，1,2代表的是页面的索引，从0开始
+	});
+});
+
+
+function h() {
+	console.log("page0");
+}
+function r() {
+	console.log("page1");
+}
+</script>
+</body>
+</html>

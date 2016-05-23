@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+	<script>
+			var deviceWidth = document.documentElement.clientWidth;
+			if (deviceWidth > 750) deviceWidth = 750;
+			document.documentElement.style.fontSize = deviceWidth / 7.5 + "px";
+			document.documentElement.style.width = "100%";
+	</script>
+	<title>tab</title>
+	<style>
+		body{
+			width:7.5rem;
+			overflow-x:hidden;
+		}
+	* {
+		margin:0;
+		padding:0;
+		border:0;
+	}
+	.tab-box{
+		width:100%;
+		overflow-x:scroll;
+	}
+
+	.tab-box::-webkit-scrollbar {
+		visibility: hidden;
+		height:0;
+	}
+
+	.tab-bar {
+		height: 30px;
+		display: -webkit-box;
+		-webkit-box-align:center;
+		position: relative;
+	}
+/* 	.tab-bar span {
+	width: 20%;
+	height: 2px;
+	display: block;
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	background: #000;
+} */
+	.tab-bar a {
+		display: block;
+		text-align: center;
+		text-decoration: none;
+		padding:0 20px;
+		height:30px;
+		line-height: 30px;
+		font-size:14px;
+	}
+	.tab-bar a.active {
+		width: 20%;
+		height: 2px;
+		display: block;
+		position: absolute;
+		left: 0;
+		bottom: 0;
+		background: #000;
+	}
+	.viewbox{
+		width:7.5rem;
+		overflow:hidden;
+	}
+	.viewport {
+
+	}
+	.pageview {
+		width: 7.5rem;
+		height: 100%;
+	}
+	</style>
+</head>
+<body >
+	<div class="tab-box">
+		<div class="tab-bar">
+			<a href="javascript:;" class="navpage">页面aaaaaaaa-1</a>
+			<a href="javascript:;" class="navpage">页面-2</a>
+			<a href="javascript:;" class="navpage">页面adwad-3</a>
+			<a href="javascript:;" class="navpage">页面ad-4</a>
+			<a href="javascript:;" class="navpage">页面-5</a>
+			<!--<span class="slidebar"></span>-->
+		</div>
+	</div>
+
+	<div class="viewbox">
+		<div id="viewport" class="viewport">
+			<div class="pageview" style="background: #3b76c0" >
+				<h3 >页面-1</h3>
+			</div>
+			<div class="pageview" style="background: #58c03b;">
+				<h3>页面-2</h3>
+			</div>
+			<div class="pageview" style="background: #c03b25;">
+				<h3>页面-3</h3>
+			</div>
+			<div class="pageview" style="background: #e0a718;">
+				<h3>页面-4</h3>
+			</div>
+			<div class="pageview" style="background: #c03eac;">
+				<h3>页面-5</h3>
+			</div>
+		</div>
+
+	</div>  
+<script>
+
+
+//接口
+
+
+//options.slidePage,要滑动的页面,,那个大框框，不是每页的   必须
+//options.slidePage;
+
+
+//options.slideNavBar要滑动的导航   必须
+//options.slideNavBar;
+
+
+//options.slideNavBarParent导航所在的父级   必须
+//options.slideNavBarParent;
+
+
+
+//options.pageview每一页的类名  必须
+//options.pageview;
+
+
+//options.viewbox  必须   滑动页面的容器，，设置活动区域大小的
+//options.viewbox;
+
+//options.slidebar导航上，指示当前页的效果块,,可以设置，也可以不设置，设置了就用设置的，没设置，js自己生成
+//options.slidebar ;
+
+//options.tabbox导航的可视区域  必须
+//options.tabbox ;
+
+
+var mytouch = new touchEvent({
+	slidePage: ".viewport",
+	slideNavBar: ".navpage",
+	pageview: ".pageview",
+	slideNavBarParent: ".tab-bar",
+	viewbox: ".viewbox",
+	tabbox: ".tab-box"
+});
+
+//后面所说的正常情况是在页面原来静止时触发的滑动事件
+//在页面滑动过程中再次触发为特殊事件
+
+
+function touchEvent(options) {
+	//options是传入的参数，用对象的方式传进去
+
+	//options.goNextPageDistance设置在正常情况下滑动距离为多少时，触发事件，默认为100
+	if(options.goNextPageDistance == undefined) {
+		options.goNextPageDistance = 40;
+	}
+
+	//options.goNextPageDistanceInSlide，触发事件，默认为200
+	if(options.goNextPageDistance == undefined) {
+		options.goNextPageDistanceInSlide = 80;
+	}
+
+
+
+	return (function() {
+
+		var viewport = document.querySelector(options.slidePage);
+		var viewbox = document.querySelector(options.viewbox);
+		var viewboxWidth = viewbox.clientWidth;
+		var tabbox = document.querySelector(options.tabbox);
+
+		//页面可视区的宽度
+		var maxWidth = window.innerWidth || document.documentElement.clientWidth;
+		var pageview = Array.prototype.slice.call(document.querySelectorAll(options.pageview));
+		var navpage = Array.prototype.slice.call(document.querySelectorAll(options.slideNavBar));
+		var tabbar = document.querySelector(options.slideNavBarParent);
+		var tabbarwidth = tabbar.clientWidth;
+
+		//初始页
+		var nowPage = 0;
+
+		var pagelen = pageview.length;
+
+		//滑动页面的css样式属性在js里面设置，，
+		viewport.style.cssText = "height: 100%;position:relative;height:900px;left: 0;top: 0;display: -webkit-box;overflow: hidden; -webkit-transform: translate3d(0,0,0); -webkit-transition-duration: 0.3s; -webkit-transition-timing-function: linear;transform: translate3d(0,0,0);transition-duration: 0.3s;transition-timing-function: linear;"
+		viewport.style.width = viewboxWidth * pageview.length + "px";
+
+		pageview.forEach(function(ele) {
+
+			//设置每页的宽度为设置的滑动区域的宽度的，不一定全屏
+			ele.style.width = viewboxWidth + "px";
+
+
+		});
+
+
+		//给导航和页面加个第几页的索引
+		//顺便计算导航所有的加起来的长度
+		var navpageAllWidth = 0;
+
+		for(var i = 0; i < pagelen; i++) {
+			navpageAllWidth += navpage[i].clientWidth;
+			pageview[i].setAttribute("page", i);
+			navpage[i].setAttribute("page", i)
+		}
+
+
+		//计算第n个导航的左边距
+		function calLeftDistance(pageN) {
+			var pageNLeftWidth = 0;
+			for(var i = 0; i < pageN - 1; i++) {
+				pageNLeftWidth += navpage[i].clientWidth;
+			}
+			return pageNLeftWidth;
+		}
+
+		//设置一个导航上的滑动可视视图,原来是在页面里面自己写，这里改为如果用户没设置这个值则由js生成
+
+		if(options.slidebar == undefined || options.slidebar == "") {
+			var slidebarLook = document.createElement("span");
+			slidebarLook.className = "slidebar";
+			tabbar.appendChild(slidebarLook);
+			slidebarLook.style.cssText = "position:absolute;background:#ff0000;height:2px;bottom:0;left:0;transform:translate3d(0,0,0); -webkit-transition-duration: 0.2s; -webkit-transition-timing-function: linear;transform: translate3d(0,0,0);transition-duration: 0.2s;transition-timing-function: linear;"
+			var slidebar = document.querySelector(".slidebar");
+			var slidebarlon = navpage[0].clientWidth;
+			slidebar.style.width = slidebarlon + "px";
+		} else {
+			var slidebar = document.querySelector(options.slidebar);
+			var slidebarlon = navpage[0].clientWidth;
+		}
+
+
+
+		//获取滑动范围所在的区域坐标范围，导航的整体布局位置是不能动的，
+		//保存的是页面一进来所在位置的值，目的就是获取一进来的位置，后面不要重新获取
+		var viewboxdis = viewbox.getBoundingClientRect();
+
+		//获取导航所在的区域坐标范围，导航的整体布局位置是不能动的，
+		var slidebardis = tabbox.getBoundingClientRect();
+
+		console.log(slidebardis);
+////////************监听事件的注册************//////
+//注册触摸事件
+//触摸事件后，touched对象会保存四个值
+// {
+//      spanX:触摸的起始水平坐标（相对于body）,
+//      spanY:触摸的起始垂直坐标（相对于body），
+//      moveX:水平手指划过距离，
+//      moveY:垂直手指划过距离，
+//  }
+
+		var touched = {};
+
+//注册触摸开始事件
+
+		function touchS(event) {
+			//event.preventDefault();
+			//document.removeEventListener("touchend", touchOver);
+
+			var target = event.target;
+
+			//获取当前点击也的索引，，后面没用到，换了种方法，
+			//如果用的这个索引，在切换途中快速点击页面，切换的效果会乱，因为点击时重新计算了点击的那一夜是哪一页，而且点击的话，移动距离会很小，
+			//由于判定问题会走到另一个if语句里去
+			//页面进来肯定是默认的第一页，所以一进来就设置了一个  nowpage = 0； 滑动时对nowpage进行++--
+			touched.index = parseInt(target.getAttribute("page"));
+
+			//获取屏幕的触点个数
+			var touches = event.targetTouches.length;
+
+			//单点触控，多点不管了。
+			if (touches == 1) {
+				//event.preventDefault();
+				var mytouch = event.targetTouches[0];
+
+				//下一次触摸事件之前，会在touched事件里面保存上一次的滑动距离，为了在其他的作用域里面可以调用这个值
+				//每次触摸事件发生前，这个值都要清0，，touchend事件用完这个值之后，上一次的就没用了。
+				//所以也可以在touchend事件里面清0
+				touched.moveX = 0;
+				touched.moveY = 0;
+
+				//求触摸开始的水平和垂直坐标，，这个是相对于body的，，，相对于可视区可以用clientX  ，clientY
+				var spanX = mytouch.pageX;
+				var spanY = mytouch.pageY;
+
+				if(spanX > viewboxdis.left && spanX < viewboxdis.right && spanY > viewboxdis.top && spanY < viewboxdis.bottom) {
+					document.addEventListener("touchmove", touchM, false);
+					document.addEventListener("touchend", touchOver, false);
+				} else {
+					document.removeEventListener("touchmove", touchM, false);
+					document.removeEventListener("touchend", touchOver, false);
+				}
+
+
+				//将触摸的开始位置保存到对象里，在touchmove事件触发的时候可以调用，，作用域的问题，
+				touched.spanX = spanX;
+				touched.spanY = spanY;
+
+				//每次触发开始前，都要获取之前元素的translate属性，要知道之前滑过多少距离，后面的滑动距离要在前面的基础上进行
+				//可以用cssText获取，
+				//viewportstyle   是页面的滑动属性
+				//slidebarstyle   是导航的滑动属性
+				var viewportstyle = viewport.getAttribute("style");
+				var slidebarstyle = slidebar.getAttribute("style");
+
+				//第一次触摸时style里面可能没有translate属性，所以加个判断
+				if(viewportstyle.indexOf("translate") > -1) {
+
+					//用的是拆分字符串获取，这里最好改成 用正则表达式获取，，，写不来。。。
+					//获取了，页面和导航已经划过的距离
+					touched.prevMove = parseFloat(viewportstyle.split("translate3d(")[1].split(")")[0].split(",")[0]);
+					touched.prevslidebar = parseFloat(slidebarstyle.split("translate3d(")[1].split(")")[0].split(",")[0]);
+				} else {
+
+					//如果没有translate属性，也就是第一次画的时候，直接设置，之前划过的距离为0就行，这一步为了，touchmove的时候容易处理
+					//必须设置这个属性
+					//页面和导航的初始滑动距离
+					touched.prevMove = 0;
+					touched.prevslidebar = 0;
+				}
+
+				//下面这个是在touchend事件之后，页面开始滑动的过程中，手指如果触摸到了滑动区域，
+				//然后获取手指触摸时，滑动的整个区域 viewport 的左边距离页面可视区左边的距离，，以防万一，用下parseFloat转成浮点数，用于数学计算
+				//保存到touched对象里面
+				touched.boundleft = parseFloat(viewport.getBoundingClientRect().left);
+
+				//同上，获取的是导航的  距离可视区左边的
+				var slidebarboundleft = parseFloat(slidebar.getBoundingClientRect().left);
+
+				//对滑动区域的距离左边的距离和每页的宽度进行求模，，如果是0，说明触摸是在上一次滑动已经结束，页面回复正常，下一次滑动还没开始。那么就按正常的滑动事件处理
+				//如果这个模数不为0，说明触摸是在touchend事件之后，页面还在滑动，那么触摸就要定在当前位置，，这里如果读取translate属性的水平偏移量会是每页要滑动到的最后位置的值，所以没用
+				//所以要获取左边距，然后赋给translate属性
+				if(parseFloat(viewport.getBoundingClientRect().left)%maxWidth != 0) {
+					viewport.style.transform = "translate3d(" + viewport.getBoundingClientRect().left + "px, 0, 0)";
+					slidebar.style.transform = "translate3d(" + slidebar.getBoundingClientRect().left + "px, 0, 0)";
+
+					//如果是在页面滑动中触摸，设置一个属性判定是这个状态
+					touched.touchBroken = true;
+					//document.addEventListener("touchend", touchOver, false);
+				}
+
+			}
+		}
+
+		//touch控制
+		//触摸move事件触发
+
+		function touchM(event) {
+			//event.preventDefault();
+			var touches = event.targetTouches.length;
+
+
+			//手指触摸的是要滑动的地方，如果触摸的是导航就不会进行这步
+			var target = event.target;
+
+			if (touches == 1) {
+				//event.preventDefault();
+				var mytouch = event.targetTouches[0];
+				var goX = mytouch.pageX;
+				var goY = mytouch.pageY;
+
+				//手指划过的位移，
+				var moveX = goX - touched.spanX;
+				var moveY = goY - touched.spanY;
+
+				//将位移的值保存到对象里面，touchend可以用
+				touched.moveX = moveX;
+				touched.moveY = moveY;
+				console.log(moveX);
+				//水平位移大于垂直位移，，并且垂直位移的总距离要小于20页面才会跟着手指动
+				if(Math.abs(touched.moveX) > Math.abs(touched.moveY) && Math.abs(moveY) < 20) {
+					viewport.style.WebkitTransform = "translate3d(" + (touched.prevMove + touched.moveX) + "px, 0, 0)";
+
+					if(touched.moveX > 0) {
+						if(nowPage <= 0) {
+							var nextpage = 0;
+						} else {
+							nextpage = nowPage - 1;
+						}
+					} else if (touched.moveX < 0) {
+						if(nowPage >= pagelen - 1) {
+							nextpage = pagelen - 1;
+						} else {
+							nextpage = nowPage + 1;
+						}
+					}
+					touched.prevslidebarlon = navpage[nowPage].clientWidth;
+					slidebarlon = navpage[nextpage].clientWidth;
+					if(Math.abs(touched.moveX) > options.goNextPageDistance) {
+						slidebar.style.width = slidebarlon + "px";
+					}
+
+					slidebar.style.WebkitTransform = "translate3d(" + (touched.prevslidebar - (touched.moveX/viewboxWidth) * touched.prevslidebarlon) + "px, 0, 0)";
+				}
+				//document.addEventListener("touchend", touchOver, false);
+			}
+		}
+
+
+
+
+		function touchOver() {
+			//document.removeEventListener("touchmove", touchM);
+
+			//如果是最后一页，而且touchmove事件是往下一页滑的话，touchend的时候要将页面恢复到最后一页的正确位置，回弹
+			if(touched.moveX < 0 && touched.index == (pageview.length - 1)) {
+				viewport.style.WebkitTransform = "translate3d(-" + ((touched.index) * viewboxWidth) + "px, 0, 0)";
+				slidebar.style.WebkitTransform = "translate3d(" + (navpageAllWidth - touched.prevslidebarlon) + "px, 0, 0)";
+				//setTimeout(function() {
+				//document.addEventListener("touchmove", touchM, false);
+				//}, 300)
+
+			} else if (touched.moveX > 0 && touched.index == 0) {
+
+				//这是第一页往前滑
+				viewport.style.WebkitTransform = "translate3d(0, 0, 0)";
+				slidebar.style.WebkitTransform = "translate3d(0, 0, 0)";
+				//setTimeout(function() {
+				//document.addEventListener("touchmove", touchM, false);
+				//}, 300)
+			} else {
+
+				//上述两种情况以外。
+				if(touched.boundleft%viewboxWidth == 0) {
+
+					///这里是原来页面已经静止了，开始的滑动，正常的处理就行，
+					//这是的是滑动距离大于100，才会滑到下一页
+
+					if(touched.moveX > options.goNextPageDistance) {
+						nowPage--;
+						viewport.style.WebkitTransform = "translate3d(-" + (nowPage * viewboxWidth) + "px, 0, 0)";
+						slidebar.style.WebkitTransform = "translate3d(" + (touched.prevslidebar - slidebarlon) + "px, 0, 0)";
+					} else if (touched.moveX < -options.goNextPageDistance) {
+						nowPage++;
+						viewport.style.WebkitTransform = "translate3d(-" + (nowPage * viewboxWidth) + "px, 0, 0)";
+						console.log("---", touched.prevslidebarlon);
+						slidebar.style.WebkitTransform = "translate3d(" + (touched.prevslidebar + touched.prevslidebarlon) + "px, 0, 0)";
+					} else {
+						viewport.style.WebkitTransform = "translate3d(-" + (nowPage * viewboxWidth) + "px, 0, 0)";
+						slidebar.style.WebkitTransform = "translate3d(" + (touched.prevslidebar) + "px, 0, 0)";
+					}
+				} else if (touched.touchBroken == true) {
+
+					//如果是在页面滑动的过程中再次触发了触摸，前面设置一个一个属性来判断这个状态
+					//这个状态为true时，，那么模数为0的状态肯定就不满足了，就会跑到这里，
+
+					//为了防止下次正常的触摸不会跑到这个判断里，，要把这个状态赋值为false；
+					touched.touchBroken = false;
+
+					//滑动的逻辑一样，就是要滑动到第几页的判断不同
+					if(touched.moveX > options.goNextPageDistance) {
+						nowPage--;
+						viewport.style.WebkitTransform = "translate3d(-" + (nowPage * viewboxWidth) + "px, 0, 0)";
+						console.log("nowpage", nowPage)
+						//导航线的位置所计算的左边其实是你要前进到的那一页的前面几页的宽度和，所以要在当前页的page上再减一页
+						//前面虽然有page--，但是和这里的nowpage-1没关系
+
+						//正常情况下  页面往前移了一页了，
+						//下同
+						slidebar.style.WebkitTransform = "translate3d(" + (calLeftDistance(nowPage + 1)) + "px, 0, 0)";
+					} else if (touched.moveX < -options.goNextPageDistance) {
+						nowPage++;
+						viewport.style.WebkitTransform = "translate3d(-" + (nowPage * viewboxWidth) + "px, 0, 0)";
+						slidebar.style.WebkitTransform = "translate3d(" + (calLeftDistance(nowPage + 1)) + "px, 0, 0)";
+					} else {
+						viewport.style.WebkitTransform = "translate3d(-" + (nowPage * viewboxWidth) + "px, 0, 0)";
+						slidebar.style.WebkitTransform = "translate3d(" + (calLeftDistance(nowPage + 1)) + "px, 0, 0)";
+					}
+				}
+
+				//setTimeout(function() {
+				//	document.addEventListener("touchmove", touchM, false);
+				//}, 300)
+			}
+			console.log(nowPage);
+		}
+		//添加监听事件，监听touch事件
+
+
+
+		document.addEventListener("touchstart", touchS, false);
+
+
+
+
+
+
+	})();
+}
+
+
+
+</script>
+</body>
+</html>
