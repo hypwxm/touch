@@ -296,10 +296,12 @@ function touchEvent(options) {
 
             //刷新的时候页面下滑的距离是手指滑动的y距离，减去本已存在的上边距这里将上边距保存起来
             var refreshpagetop = pageview[nowPage].querySelector(options.pagecontainer).getBoundingClientRect().top;
-            if(refreshpagetop > 0) {
+            if(refreshpagetop > 0 && refreshpagetop <= viewboxTopInfirst) {
                 touched.refreshprevtoplon = Math.abs(viewboxTopInfirst - Math.abs(refreshpagetop));
-            } else {
+            } else if(refreshpagetop < 0) {
                 touched.refreshprevtoplon = Math.abs(viewboxTopInfirst + Math.abs(refreshpagetop));
+            } else {
+                touched.refreshprevtoplon = -(viewboxTopInfirst + Math.abs(refreshpagetop));
             }
 
 
@@ -323,8 +325,12 @@ function touchEvent(options) {
                 }
 
                 //只有在手指滑动时候，这个页面能达到最顶部才会注册下拉刷新事件
-                if(viewHeight - mytouch.clientY > -needrefreshpage.getBoundingClientRect().top) {
+                if(viewHeight - mytouch.clientY > -needrefreshpage.getBoundingClientRect().top && needrefreshpage.getBoundingClientRect().top <= viewboxTopInfirst) {
                     needrefreshpage.addEventListener("touchmove", slideDownRefresh, false);
+                } else if (needrefreshpage.getBoundingClientRect().top > viewboxTopInfirst) {
+                    needrefreshpage.removeEventListener("touchmove", slideDownRefresh, false);
+                    needrefreshpage.removeEventListener("touchend", touchRefreshEnd, false);
+                    needrefreshpage.addEventListener("touchmove", ifPreventDefault, false);
                 } else {
                     needrefreshpage.removeEventListener("touchmove", slideDownRefresh, false);
                 }
@@ -419,32 +425,61 @@ function touchEvent(options) {
             //手指划过的位移，
             touched.refreshX = goX - touched.spanX;
             touched.refreshY = goY - touched.spanY;
+
+
+            //类似腾讯新闻的释放刷新更多
+            function refreshMore() {
+                if(self.querySelector(".loadingview")) return;
+                console.log(self.innerHTML)
+                var loadingview = document.createElement("div");
+                loadingview.className = "loadingview loadingview" + nowPage;
+                loadingview.innerHTML = "释放加载更多数据";
+                //loadingview.style.cssText = "position:absolute;width:100%;height:50px;left:0;top:0;background:#cdcdcd;"
+                self.insertBefore(loadingview, self.firstChild);
+            }
+
+
             //控制页面下拉刷新，，，这里要用到viewboxTopInFirst，这是页面一进来就保存的viewbox的上边框，只有页面到达这个位置在下拉的时候才会触发刷新页面
             //this代指当前页面pageview
             var refreshgo = function() {
+
+                //下拉刷新的时候页面会被拉下去一部分，这个时候再下拉，不能从顶部重新开始，要冲当前位置开始
+                var refreshHavenTop = self.getBoundingClientRect().top - viewboxTopInfirst;
                 self.style.transform = "translate3d(0px," + (touched.refreshY - touched.refreshprevtoplon) / 3 + "px,0)";
                 self.style.WebkitTransform = "translate3d(0px," + (touched.refreshY - touched.refreshprevtoplon) / 3 + "px,0)";
             };
             ifFresh++;
+
+            //只在开始滑动的时候判断滑动的距离是否满足,满足就注册事件，
             if(ifFresh == 1) {
                 if(Math.abs(touched.refreshY) / Math.abs(touched.refreshX) < options.YtoX) {
                     self.removeEventListener("touchmove", slideDownRefresh, false);
                     self.removeEventListener("touchmove", ifPreventDefault, false);
                     self.removeEventListener("touchend", touchRefreshEnd, false);
                     return;
+                } else {
+                    refreshMore();
                 }
             }
-            console.log(touched.refreshX,"====",touched.refreshY)
-            self.innerHTML = self.getBoundingClientRect().top + ",<br>" + touched.refreshY
+            console.log(touched.refreshX,"====",touched.refreshY);
+            //self.innerHTML = self.innerHTML + self.getBoundingClientRect().top + ",<br>" + touched.refreshY;
             //console.log(self.getBoundingClientRect().top,"dadw====wdad",viewboxTopInfirst);
+
+            //获得当前页面的顶部距离可视区顶部的距离
             var newrefreshtoplon = self.getBoundingClientRect().top;
-            if (newrefreshtoplon < viewboxTopInfirst || touched.refreshY < touched.refreshprevtoplon) {
-                self.innerHTML = self.innerHTML + "<br>hahahahah";
+
+            //如果页面在未注册滑动touchend事件的过程中，顶部的距离小于初始位置的值（未在页面初始位置），就移除或者不注册touchend
+            //加第二个判断是如果页面下拉刷新过了，在回到页面顶部，往上滑的时候，无法取消ifPreventDefault的注册，导致页面无法滑动，，因为这里不会执行refreshgo函数
+            if (newrefreshtoplon < viewboxTopInfirst || (touched.refreshY < touched.refreshprevtoplon && !self.querySelector(".loadingview"))) {
+                //self.innerHTML = self.innerHTML + "<br>hahahahah";
                 self.style.cssText = self.style.cssText.replace("transform", "");
                 self.removeEventListener("touchend", touchRefreshEnd, false);
                 self.removeEventListener("touchmove", ifPreventDefault, false);
                 return;
             } else if (touched.refreshY >= 0) {
+
+                //这里要满足滑动距离大于0；并且，滑动的位置是初始位置开始的才能注册下面事件，，
+                // 因为上面那个判断里面加了newrefreshtoplon < viewboxTopInfirst这个判断，并且不满足会return，所以这里不用判断了。
                 self.addEventListener("touchmove", ifPreventDefault, false);
                 self.addEventListener("touchend", touchRefreshEnd, false);
                 refreshgo();
@@ -605,35 +640,44 @@ function touchEvent(options) {
 
         if(nowpagecontainer.getBoundingClientRect().top > 50 + viewboxTopInfirst) {
             //设置加载条的样式
-            var loadingview = document.createElement("div");
-            loadingview.className = "loadingview loadingview" + nowPage;
-            loadingview.innerHTML = "正在加载数据...";
-            //loadingview.style.cssText = "position:absolute;width:100%;height:50px;left:0;top:0;background:#cdcdcd;"
-            pageview[nowPage].insertBefore(loadingview, nowpagecontainer);
-            containerStop(50);
+            nowpagecontainer.querySelector(".loadingview").innerHTML = "正在加载数据。。。";
+            containerStop(40);
             loadedpage = loadedpage.filter(function(page) {
                 return page.substring(4, page.length) != nowPage;
-            })
+            });
             doneCallback(nowPage);
             var i = 0;
-            var observation = setInterval(function() {
-                i++;
-                if(i > 50) {
-                    clearInterval(observation);
-                    loadingview.innerHTML = "加载数据失败";
-                    setTimeout(function() {
-                        containerStop(0);
-                        pageview[nowPage].removeChild($$(".loadingview" + nowPage));
-                    }, 1000);
-                    return;
-                }
-                console.log("loading");
-                if(touched.pagecomplete == true) {
-                    clearInterval(observation);
-                    pageview[nowPage].removeChild($$(".loadingview" + nowPage));
-                    containerStop(0);
-                }
-            }, 50)
+
+            //这里加个闭包，创建独立作用域
+            ;-function(nowpagecontainer, nowPage) {
+                var observation = setInterval(function() {
+                    i++;
+                    if(i > 400) {
+                        clearInterval(observation);
+                        nowpagecontainer.querySelector(".loadingview").innerHTML = "加载数据失败";
+                        setTimeout(function() {
+                            containerStop(0);
+                            nowpagecontainer.removeChild($$(".loadingview" + nowPage));
+                        }, 1000);
+                        return;
+                    }
+                    console.log("loading");
+                    console.log("pagecomplete", touched.pagecomplete);
+                    if(touched.pagecomplete != undefined) {
+                        if(touched.pagecomplete == true) {
+                            clearInterval(observation);
+                            nowpagecontainer.querySelector(".loadingview").innerHTML = "加载数据成功";
+                            setTimeout(function() {
+                                containerStop(0);
+                                nowpagecontainer.removeChild($$(".loadingview" + nowPage));
+                            }, 1000);
+
+                        }
+                    }
+
+                }, 50)
+            }(nowpagecontainer, nowPage);
+
         } else {
             nowpagecontainer.style.transform = "translate3d(0px,0px,0px)";
             nowpagecontainer.style.WebkitTransform = "translate3d(0px,0px,0px)";
