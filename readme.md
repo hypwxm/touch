@@ -18,3 +18,11 @@
 
 # 必须
 > 本插件不会监听数据（ajax）请求什么时候完毕。所以如果注册了下拉刷新事件，请在完成的地方加上touched.pagecomplete = true；
+
+# 自定义下拉刷新加载样式条
+> customLoading是一个对象，里面包含四个内置对象方法， 
+> （所有的方法里都有两个参数，需要加进度条的当前页所对应的dom结构$self, 当前页索引$nowPage，这两个参数都是假定是实际值,,最后将样式条$self.insertBefore(loadingview, $self.firstChild);加在当前页内容的第一个子元素之前） 
+>> start，加载条起始状态
+>> loading，加载条正在加载状态
+>> success， 数据请求成功执行方法  里面可以设置个touched.status来判断请求返回的状态码，设置相应的提示，成功还是失败
+>> fail，数据请求失败执行方法

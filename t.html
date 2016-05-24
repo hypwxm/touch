@@ -10,104 +10,17 @@
 			document.documentElement.style.width = "100%";
 	</script>
 	<title>tab</title>
-	<style>
-		body{
-			width:7.5rem;
-			overflow-x:hidden;
-		}
-	* {
-		margin:0;
-		padding:0;
-		border:0;
-	}
-	.tab-box{
-		width:100%;
-		overflow-x:scroll;
-		position:relative;
-		height:30px;
-	}
-
-	.tab-box::-webkit-scrollbar {
-		visibility: hidden;
-		height:0;
-	}
-
-	.tab-bar {
-		height: 30px;
-		display: -webkit-box;
-		-webkit-box-align:center;
-		position: relative;
-		top:0;
-		left:0;
-	}
-/* 	.tab-bar span {
-	width: 20%;
-	height: 2px;
-	display: block;
-	position: absolute;
-	left: 0;
-	bottom: 0;
-	background: #000;
-} */
-	.tab-bar a {
-		display: block;
-		text-align: center;
-		text-decoration: none;
-		padding:0 20px;
-		height:30px;
-		line-height: 30px;
-		font-size:14px;
-		position:relative;
-	}
-	.tab-bar a.active {
-		width: 20%;
-		height: 2px;
-		display: block;
-		position: absolute;
-		left: 0;
-		bottom: 0;
-		background: #000;
-	}
-	.viewbox{
-		width:7.5rem;
-		overflow:hidden;
-		-webkit-box-flex:1;
-	}
-	.viewport {
-
-	}
-	.pageview {
-		width: 7.5rem;
-		overflow-y:scroll;
-		position:relative;
-	}
-	.touchContainer{
-		display:-webkit-box;
-		-webkit-box-orient:vertical;
-		width:100%;
-	}
-	.pagecontainer{
-		height:5000px;
-	}
-	.loadingview{
-		position:absolute;
-		width:100%;
-		height:40px;
-		left:0;
-		top:-40px;
-		background:#ECECEC;
-		font-size:12px;
-		text-align:center;
-		display:-webkit-box;
-		-webkit-box-pack:center;
-		-webkit-box-align:center;
-		color:#666;
-	}
-	</style>
+	<link href="touchpage.css" rel="stylesheet" type="text/css">
 </head>
 <body >
+
+<!--大容器-->
 <div class="touchContainer">
+
+	<!--导航条容器-->
 	<div class="tab-box">
+
+		<!--导航条实际内容-->
 		<div class="tab-bar">
 			<a href="javascript:;" class="navpage"><div>页面aaaaaaaa-1</div></a>
 			<a href="javascript:;" class="navpage">页面-2</a>
@@ -117,7 +30,11 @@
 			<!--<span class="slidebar"></span>-->
 		</div>
 	</div>
+
+	<!--页面容器-->
 	<div class="viewbox">
+
+		<!--页面实际内容-->
 		<div id="viewport" class="viewport">
 			<div class="pageview" style="background: #3b76c0" >
 				<div style="height:5000px;" class="pagecontainer" num="0"><div></div>页面-1</div>
@@ -137,6 +54,7 @@
 		</div>
 	</div>
 </div>
+<script src="tool.js"></script>
 <script src="touchPage.js"></script>
 
 <script>
@@ -186,10 +104,12 @@ $(function() {
 		touchLonForSlideStart: 40,   //设置手指划过指定距离，页面才能跟着已启动
 		refresh: "yes",    //是否开启单页下拉刷新。
 		XtoY: 5,    //设置手指在一开始滑动的瞬间划过的水平距离比上垂直距离  小于这个要求页面才能动
-		YtoX: 0.1,   //下拉刷新可开始滑动的滑动比例  越小越灵活
+		YtoX: 4,   //下拉刷新可开始滑动的滑动比例  越小越灵活
 		currentPageSign: null,  //到第几个导航了的指示器，，那条红线，没传，js会自己创建。
 		startLoadingDate: "end",   //滑动时是否开始加载数据，start表示有滑动了，就执行划出来那一页的方法end是在touchend之后，页面进行到了某一页，在执行那一夜要执行的方法,传null的话就不会执行回调了。如果不传，默认为滑动开始就执行
-		callback: {page0:h, page1: r},  //每页要执行的回调函数，，格式必须为page1：function（）{}，page2：function（）{}，1,2代表的是页面的索引，从0开始  ...每页的数据加载完了的位置要加上touched.pagecomplete参数
+		callback: {page0:h, page1: r, page2: t},  //每页要执行的回调函数，，格式必须为page1：function（）{}，page2：function（）{}，1,2代表的是页面的索引，从0开始  ...每页的数据加载完了的位置要加上touched.pagecomplete参数
+		iscustomLoading: "yes", //表示是否开始自定义加载条，如果没有自定义的方法，请关闭（传yes以外的值，或者不要写这个属性）
+		customLoading: {start: start, loading: loading, success: success, fail: fail},  //iscustomLoading = yes的时候这里面的方法才会执行
 	});
 });
 
@@ -203,7 +123,37 @@ function h() {
 }
 function r() {
 	console.log("page1");
+}
+function t() {
+	console.log("page2");
+	touched.status = 400;
 	touched.pagecomplete = true
+}
+function start($self, $nowPage) {
+	//isLoadingOrIsLoaded("", true, false)
+}
+function loading($self, $nowPage) {
+	console.log("wawdawdawdawdawdawd")
+	isLoadingOrIsLoaded("", true, false)
+}
+function success($self, $nowPage) {
+	if(touched.status == 400) {
+		setTimeout(function() {
+			isLoadingOrIsLoaded("数据加载失败", false, true)
+		}, 1000)
+	} else {
+		setTimeout(function() {
+			isLoadingOrIsLoaded("数据加载成功", false, true)
+		}, 1000)
+	}
+
+
+}
+function fail($self, $nowPage) {
+	setTimeout(function() {
+		isLoadingOrIsLoaded("数据加载超时", false, true)
+	}, 1000)
+
 }
 </script>
 </body>

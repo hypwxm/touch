@@ -107,9 +107,7 @@ function touchEvent(options) {
         var havenLoad = loadedpage.some(function(ele) {
             return ele == "page" + donepage;
         });
-        if(havenLoad) {
-            return;
-        } else {
+        if(!havenLoad) {
             for(var key in allDone) {
                 if(key == ("page" + donepage)) {
                     allDone[key]();
@@ -428,14 +426,14 @@ function touchEvent(options) {
 
 
             //类似腾讯新闻的释放刷新更多
-            function refreshMore() {
-                if(self.querySelector(".loadingview")) return;
-                console.log(self.innerHTML)
+            function refreshMore($self, $nowPage) {
+                if($self.querySelector(".loadingview")) return;
+                console.log($self.innerHTML)
                 var loadingview = document.createElement("div");
-                loadingview.className = "loadingview loadingview" + nowPage;
+                loadingview.className = "loadingview loadingview" + $nowPage;
                 loadingview.innerHTML = "释放加载更多数据";
                 //loadingview.style.cssText = "position:absolute;width:100%;height:50px;left:0;top:0;background:#cdcdcd;"
-                self.insertBefore(loadingview, self.firstChild);
+                $self.insertBefore(loadingview, $self.firstChild);
             }
 
 
@@ -443,7 +441,7 @@ function touchEvent(options) {
             //this代指当前页面pageview
             var refreshgo = function() {
 
-                //下拉刷新的时候页面会被拉下去一部分，这个时候再下拉，不能从顶部重新开始，要冲当前位置开始
+                //下拉刷新的时候页面会被拉下去一部分，这个时候再下拉，不能从顶部重新开始，要从当前位置开始
                 var refreshHavenTop = self.getBoundingClientRect().top - viewboxTopInfirst;
                 self.style.transform = "translate3d(0px," + (touched.refreshY - touched.refreshprevtoplon) / 3 + "px,0)";
                 self.style.WebkitTransform = "translate3d(0px," + (touched.refreshY - touched.refreshprevtoplon) / 3 + "px,0)";
@@ -458,7 +456,13 @@ function touchEvent(options) {
                     self.removeEventListener("touchend", touchRefreshEnd, false);
                     return;
                 } else {
-                    refreshMore();
+                    if(options.iscustomLoading == "yes") {
+                        //自定义加载条的开始状态
+                        options.customLoading["start"](self, nowPage)
+                    } else {
+                        refreshMore(self, nowPage); 
+                    }
+                    
                 }
             }
             console.log(touched.refreshX,"====",touched.refreshY);
@@ -640,8 +644,22 @@ function touchEvent(options) {
 
         if(nowpagecontainer.getBoundingClientRect().top > 50 + viewboxTopInfirst) {
             //设置加载条的样式
-            nowpagecontainer.querySelector(".loadingview").innerHTML = "正在加载数据。。。";
-            containerStop(40);
+            if(options.iscustomLoading == "yes") {
+                console.log("loding");
+                options.customLoading["loading"](nowpagecontainer, nowPage)
+            } else {
+                nowpagecontainer.querySelector(".loadingview").innerHTML = "正在加载数据。。。";
+            }
+
+            //加载条的高度
+
+            if(nowpagecontainer.querySelector(".loadingview")) {
+                var loadingHeight = nowpagecontainer.querySelector(".loadingview").clientHeight;
+                containerStop(loadingHeight);
+            } else {
+                containerStop(0);
+            }
+
             loadedpage = loadedpage.filter(function(page) {
                 return page.substring(4, page.length) != nowPage;
             });
@@ -654,11 +672,16 @@ function touchEvent(options) {
                     i++;
                     if(i > 400) {
                         clearInterval(observation);
-                        nowpagecontainer.querySelector(".loadingview").innerHTML = "加载数据失败";
-                        setTimeout(function() {
-                            containerStop(0);
-                            nowpagecontainer.removeChild($$(".loadingview" + nowPage));
-                        }, 1000);
+                        if(options.iscustomLoading == "yes") {
+                            options.customLoading["fail"](nowpagecontainer, nowPage);
+                        } else {
+                            nowpagecontainer.querySelector(".loadingview").innerHTML = "加载数据失败";
+                            setTimeout(function() {
+                                containerStop(0);
+                                nowpagecontainer.removeChild($$(".loadingview" + nowPage));
+                            }, 1000);
+                        }
+
                         return;
                     }
                     console.log("loading");
@@ -666,11 +689,16 @@ function touchEvent(options) {
                     if(touched.pagecomplete != undefined) {
                         if(touched.pagecomplete == true) {
                             clearInterval(observation);
-                            nowpagecontainer.querySelector(".loadingview").innerHTML = "加载数据成功";
-                            setTimeout(function() {
-                                containerStop(0);
-                                nowpagecontainer.removeChild($$(".loadingview" + nowPage));
-                            }, 1000);
+                            if(options.iscustomLoading == "yes") {
+                                options.customLoading["success"](nowpagecontainer, nowPage);
+                            } else {
+                                nowpagecontainer.querySelector(".loadingview").innerHTML = "加载数据成功";
+                                setTimeout(function() {
+                                    containerStop(0);
+                                    nowpagecontainer.removeChild($$(".loadingview" + nowPage));
+                                }, 1000);
+                            }
+
 
                         }
                     }
